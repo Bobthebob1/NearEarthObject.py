@@ -7,6 +7,9 @@ import os
 from datetime import date
 def clear():
     os.system("clear")
+#API Key
+print('please enter API key from https://api.nasa.gov/:')
+API_key = input()
 
 #units
 
@@ -27,7 +30,7 @@ else:
     print('\nSorry there has been an error. Please try again.\n')
 
 #API
-response_API = requests.get('https://api.nasa.gov/neo/rest/v1/feed?start_date='+str(searchDate)+'&end_date='+str(searchDate)+'&api_key=DEMO_KEY', timeout=300000)
+response_API = requests.get('https://api.nasa.gov/neo/rest/v1/feed?start_date='+str(searchDate)+'&end_date='+str(searchDate)+'&api_key='+API_key, timeout=300000)
 data = response_API.text
 parse_json = json.loads(data)
 allAsteroids = parse_json['near_earth_objects'][str(searchDate)]
