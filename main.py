@@ -1,5 +1,6 @@
 #important instructions:
 #below imports is units for asteroid. Do ctrl f, type in the existing unit (i.e m) and replace all instances of m except for the variable at the top with the new variable (say km)
+#This code could be optimized but whenever I try to it breaks. So it shall remain as is. If you want to try to optimize it feel free, but you will probably break it. 
 print('welcome to asteroid.py. Please note that there is very little to no data available after 2200, and it is not recommended trying to get said data through this program as it may crash.\n')
 import requests
 import json
