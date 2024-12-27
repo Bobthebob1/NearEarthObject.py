@@ -1,25 +1,22 @@
-#important instructions:
-#below imports is units for asteroid. Do ctrl f, type in the existing unit (i.e m) and replace all instances of m except for the variable at the top with the new variable (say km)
-#This code could be optimized but whenever I try to it breaks. So it shall remain as is. If you want to try to optimize it feel free, but you will probably break it. 
-print('welcome to asteroid.py. Please note that there is very little to no data available after 2200, and it is not recommended trying to get said data through this program as it may crash.\n')
 import requests
 import json
 import os
 from datetime import date
+
+
 def clear():
     os.system("clear")
-#API Key
-print('please enter API key from https://api.nasa.gov/:')
-API_key = input()
 
-#units
 
-m = 'meters'
-km = 'kilometers'
-mi = 'miles'
-ft = 'feet'
+# units
+units = {
+    'm': 'meters',
+    'km': 'kilometers',
+    'mi': 'miles',
+    'ft': 'feet'
+}
 
-#Select Date
+# Select Date
 print('If you would like to search for a custom date enter 0. If you would like to search for today enter 1. Enter your response in the prompt below:')
 q1 = input()
 if q1 == str(0):
@@ -29,111 +26,154 @@ elif q1 == str(1):
     searchDate = date.today()
 else:
     print('\nSorry there has been an error. Please try again.\n')
+    exit()
 
-#API
-response_API = requests.get('https://api.nasa.gov/neo/rest/v1/feed?start_date='+str(searchDate)+'&end_date='+str(searchDate)+'&api_key='+API_key, timeout=300000)
-data = response_API.text
-parse_json = json.loads(data)
-allAsteroids = parse_json['near_earth_objects'][str(searchDate)]
-elementCount = parse_json['element_count']
-#Data from asteroid highest on AH Index
+# API
+try:
+    response_API = requests.get(
+        f'https://api.nasa.gov/neo/rest/v1/feed?start_date={searchDate}&end_date={searchDate}&api_key=a891sk5lkhJVt0YJTSxd5bk97uCxc95HfsfjBAHP', timeout=300000)
+    response_API.raise_for_status()
+    data = response_API.text
+    parse_json = json.loads(data)
+    allAsteroids = parse_json['near_earth_objects'][str(searchDate)]
+    elementCount = parse_json['element_count']
+except requests.exceptions.RequestException as e:
+    print(f"An error occurred while fetching data: {e}")
+    exit()
 
-print("\nEnter the highest number for # of asteroids you would like to view below. Available numbers are 1 to",elementCount, "| Enter highest value:")
+# Select Unit
+print("Select the unit of measurement for the asteroid's diameter and miss distance:")
+for key, value in units.items():
+    print(f"{key}: {value}")
+selected_unit = input("Enter the unit (m/km/mi/ft): ").strip().lower()
+if selected_unit not in units:
+    print("Invalid unit selected. Defaulting to meters.")
+    selected_unit = 'm'
+
+# Data from asteroid highest on AH Index
+print("\nEnter the highest number for # of asteroids you would like to view below. Available numbers are 1 to", elementCount, "| Enter highest value:")
 maxRangeVal = int(input())
-print("\nIf you want to recieve data from all asteroids, regardless of AHI value, press 1. If you want data from asteroids with only an AHI value of 1 or higher (default) press 0.")
+print("\nIf you want to receive data from all asteroids, regardless of AHI value, press 1. If you want data from asteroids with only an AHI value of 1 or higher (default) press 0.")
 datainp = int(input())
-for i in range(0, maxRangeVal):
-    class Asteroid:
-        def __init__(self):
-            self.array = allAsteroids[i]
-            self.name = self.array['name']
-            self.cADat = self.array['close_approach_data']
-            self.EstD = self.array['estimated_diameter']
-            self.MissDis = self.cADat[0]
-            self.MissDisLuna = self.MissDis['miss_distance']
-            self.AstD = self.EstD[m]
-            self.MinD = self.AstD['estimated_diameter_min']
-            self.MaxD = self.AstD['estimated_diameter_max']
-            self.avgAstD = round(self.MinD + self.MaxD /2, 3)
-            self.cADate1 = self.cADat[0]
-            self.cADate2 = self.cADate1['close_approach_date']
-    astDat = Asteroid()
-    
-    #AHI Formula (piecewise function)
-    
-    if float(astDat.MissDisLuna['lunar'])>=1 or astDat.avgAstD<10:
-        ahiLevel = 0
-    elif 0.1<=float(astDat.MissDisLuna['lunar'])<1 and 10<=astDat.avgAstD<25:
-        ahiLevel = 1
-    elif 0.1<=float(astDat.MissDisLuna['lunar'])<1 and 25<=astDat.avgAstD<50:
-        ahiLevel = 2
-    elif 0.1<=float(astDat.MissDisLuna['lunar'])<1 and 50<=astDat.avgAstD<100:
-        ahiLevel = 3
-    elif 0.1<=float(astDat.MissDisLuna['lunar'])<1 and 100<=astDat.avgAstD<200:
-        ahiLevel = 4
-    elif float(astDat.MissDisLuna['lunar'])<=0.01 and astDat.avgAstD>100:
-        ahiLevel = 5
-    elif 0.01<=float(astDat.MissDisLuna['lunar'])<0.1 and 100<=astDat.avgAstD<=500:
-        ahiLevel = 3
-    elif 0.01<=float(astDat.MissDisLuna['lunar'])<0.1 and astDat.avgAstD<=10:
-        ahiLevel =  0
-    elif float(astDat.MissDisLuna['lunar'])>=1 and astDat.avgAstD>=200:
-        ahiLevel = 0
-    elif 0.1<=float(astDat.MissDisLuna['lunar'])<=0.25 and 200<=astDat.avgAstD<=500:
-        ahiLevel = 2
-    elif 0.25<=float(astDat.MissDisLuna['lunar'])<=0.5 and 200<=astDat.avgAstD<=500:
-        ahiLevel = 1
-    elif 0.01<=float(astDat.MissDisLuna['lunar'])<=0.1 and astDat.avgAstD>=500:
-        ahiLevel = 4
-    elif 0.1<=float(astDat.MissDisLuna['lunar'])<=0.25 and astDat.avgAstD>=500:
-        ahiLevel = 3
-    elif 0.25<=float(astDat.MissDisLuna['lunar'])<=0.5 and astDat.avgAstD>=500:
-        ahiLevel = 2
-    elif float(astDat.MissDisLuna['lunar']) == None and astDat.avgAstD == None:
-        print("An error has occured in gathering data. Please check the code or the data you are drawing from")
-    elif float(astDat.MissDisLuna['lunar']) == None or astDat.avgAstD == None:
-        print("An error has occured in gathering data. Please check the code or the data you are drawing from")
-    else:
-        print("An error has occured in gathering data. Please check the code or the data you are drawing from")
-    
-    #Asteroid data print out
-    if datainp == 0:
-        if ahiLevel >= 1:
-            print()           
-            print(" Asteroid Name:",astDat.name ,"\n", "Average Asteroid Diameter:", 
-            astDat.avgAstD, m, "\n", "Asteroid miss distance in LD:", 
-            round(float(astDat.MissDisLuna['lunar']), 2),"\n Date of closest approach:", astDat.cADate2)
-            if float(astDat.MissDisLuna['lunar']) < 0.01:
-                print(" Alert! Closest approach is less than 0.01 LD")
-            elif 0.01 < float(astDat.MissDisLuna['lunar']) < 0.1:
-                print(" Concern may be warrented. Closest approach is between 0.01 and 0.1 LD")
-            else:
-                print(" Close approach is far enough away to be safe.")
-            print(" AHI Level: Level", ahiLevel)
-            if astDat.array["is_potentially_hazardous_asteroid"] is True:
-                print(" This asteroid is classified as a potentially hazardous asteroid.")
-            elif astDat.array["is_potentially_hazardous_asteroid"] is False:
-                print(" This asteroid is not classified as a potentially hazardous asteroid.")
-            print()
-        elif ahiLevel == 0:
-            print(" Asteroid Name:",astDat.name ,"|","AHI Level: Level", ahiLevel)
-    if datainp == 1:
-        print()           
-        print(" Asteroid Name:",astDat.name ,"\n", "Average Asteroid Diameter:", 
-        astDat.avgAstD, m, "\n", "Asteroid miss distance in LD:", 
-        round(float(astDat.MissDisLuna['lunar']), 2),"\n Date of closest approach:", astDat.cADate2)
-        if float(astDat.MissDisLuna['lunar']) < 0.01:
-            print(" Alert! Closest approach is less than 0.01 LD")
-        elif 0.01 < float(astDat.MissDisLuna['lunar']) < 0.1:
-            print(" Concern may be warrented. Closest approach is between 0.01 and 0.1 LD")
-        else:
-            print(" Close approach is far enough away to be safe.")
-        print(" AHI Level: Level", ahiLevel)
-        if astDat.array["is_potentially_hazardous_asteroid"] is True:
-            print(" This asteroid is classified as a potentially hazardous asteroid.")
-        elif astDat.array["is_potentially_hazardous_asteroid"] is False:
-            print(" This asteroid is not classified as a potentially hazardous asteroid.")
-        print()
-#Thank you
 
-print(" Thank you for using Asteroid.py, have a nice day.")
+class Asteroid:
+    def __init__(self, data):
+        self.array = data
+        self.name = self.array['name']
+        self.cADat = self.array['close_approach_data']
+        self.EstD = self.array['estimated_diameter']
+        self.MissDis = self.cADat[0]
+        self.MissDisLuna = self.MissDis['miss_distance']
+        self.AstD = self.EstD[units[selected_unit]]
+        self.MinD = self.AstD['estimated_diameter_min']
+        self.MaxD = self.AstD['estimated_diameter_max']
+        self.avgAstD = round((self.MinD + self.MaxD) / 2, 3)
+        self.cADate1 = self.cADat[0]
+        self.cADate2 = self.cADate1['close_approach_date']
+        self.velocity = self.cADate1['relative_velocity']['kilometers_per_hour']
+        self.orbiting_body = self.cADate1['orbiting_body']
+        self.hazardous = self.array["is_potentially_hazardous_asteroid"]
+
+def calculate_ahi_level(astDat):
+    try:
+        lunar_distance = float(astDat.MissDisLuna['lunar'])
+        avg_diameter = astDat.avgAstD
+
+        if lunar_distance >= 1 or avg_diameter < 10:
+            return 0
+        elif 0.1 <= lunar_distance < 1:
+            if 10 <= avg_diameter < 25:
+                return 1
+            elif 25 <= avg_diameter < 50:
+                return 2
+            elif 50 <= avg_diameter < 100:
+                return 3
+            elif 100 <= avg_diameter < 200:
+                return 4
+            elif avg_diameter >= 500:
+                return 4
+            else:
+                return 0
+        elif lunar_distance <= 0.01 and avg_diameter > 100:
+            return 5
+        elif 0.01 <= lunar_distance < 0.1:
+            if 100 <= avg_diameter <= 500:
+                return 3
+            elif avg_diameter <= 10:
+                return 0
+        elif 0.1 <= lunar_distance <= 0.25:
+            if 200 <= avg_diameter <= 500:
+                return 2
+            elif avg_diameter >= 500:
+                return 3
+        elif 0.25 <= lunar_distance <= 0.5:
+            if 200 <= avg_diameter <= 500:
+                return 1
+            elif avg_diameter >= 500:
+                return 2
+        else:
+            return 0
+    except (TypeError, ValueError):
+        print("An error has occurred in gathering data. Please check the code or the data you are drawing from")
+        return 0
+
+def display_asteroid_data(astDat, ahiLevel):
+    print()
+    print(" Asteroid Name:", astDat.name, "\n", "Average Asteroid Diameter:",
+          astDat.avgAstD, units[selected_unit], "\n", "Asteroid miss distance in LD:",
+          round(float(astDat.MissDisLuna['lunar']), 2), "\n Date of closest approach:", astDat.cADate2,
+          "\n Velocity (km/h):", astDat.velocity, "\n Orbiting Body:", astDat.orbiting_body)
+    if float(astDat.MissDisLuna['lunar']) < 0.01:
+        print(" Alert! Closest approach is less than 0.01 LD")
+    elif 0.01 < float(astDat.MissDisLuna['lunar']) < 0.1:
+        print(" Concern may be warranted. Closest approach is between 0.01 and 0.1 LD")
+    else:
+        print(" Close approach is far enough away to be safe.")
+    print(" AHI Level: Level", ahiLevel)
+    if astDat.hazardous:
+        print(" This asteroid is classified as a potentially hazardous asteroid.")
+    else:
+        print(" This asteroid is not classified as a potentially hazardous asteroid.")
+    print()
+
+def display_summary_statistics(asteroids):
+    total_asteroids = len(asteroids)
+    avg_diameter = sum(ast.avgAstD for ast in asteroids) / total_asteroids
+    print(f"\nSummary Statistics:\nTotal number of asteroids: {total_asteroids}\nAverage diameter: {avg_diameter:.2f} {units[selected_unit]}")
+
+asteroids = []
+for i in range(0, maxRangeVal):
+    astDat = Asteroid(allAsteroids[i])
+    ahiLevel = calculate_ahi_level(astDat)
+    if datainp == 0 and ahiLevel >= 1:
+        display_asteroid_data(astDat, ahiLevel)
+    elif datainp == 1:
+        display_asteroid_data(astDat, ahiLevel)
+    asteroids.append(astDat)
+
+display_summary_statistics(asteroids)
+
+# Save asteroid data to a file
+save_data = input("Would you like to save the asteroid data to a file? (yes/no): ").strip().lower()
+if save_data == 'yes':
+    file_name = input("Enter the file name (with .txt extension): ").strip()
+    with open(file_name, 'w') as file:
+        for astDat in asteroids:
+            ahiLevel = calculate_ahi_level(astDat)
+            file.write(f"Asteroid Name: {astDat.name}\n")
+            file.write(f"Average Asteroid Diameter: {astDat.avgAstD} {units[selected_unit]}\n")
+            file.write(f"Asteroid miss distance in LD: {round(float(astDat.MissDisLuna['lunar']), 2)}\n")
+            file.write(f"Date of closest approach: {astDat.cADate2}\n")
+            file.write(f"Velocity (km/h): {astDat.velocity}\n")
+            file.write(f"Orbiting Body: {astDat.orbiting_body}\n")
+            file.write(f"AHI Level: Level {ahiLevel}\n")
+            if astDat.hazardous:
+                file.write("This asteroid is classified as a potentially hazardous asteroid.\n")
+            else:
+                file.write("This asteroid is not classified as a potentially hazardous asteroid.\n")
+            file.write("\n")
+    print(f"Asteroid data has been saved to {file_name}")
+else:
+    print("Asteroid data was not saved.")
+
+print("Thank you for using Asteroid.py, have a nice day.")
